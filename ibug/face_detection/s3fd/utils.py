@@ -1,5 +1,4 @@
 import torch
-from torch.autograd import Function
 from itertools import product as product
 
 
@@ -109,11 +108,11 @@ class Detect(object):
         num = loc_data.size(0)
         num_priors = prior_data.size(0)
 
-        conf_preds = conf_data.view(num, num_priors, self.num_classes).transpose(2, 1)
+        conf_preds = conf_data.view(num, num_priors, self.num_classes).transpose(2, 1).cpu()
         batch_priors = prior_data.view(-1, num_priors, 4).expand(num, num_priors, 4)
         batch_priors = batch_priors.contiguous().view(-1, 4)
 
-        decoded_boxes = decode(loc_data.view(-1, 4), batch_priors, self.variance)
+        decoded_boxes = decode(loc_data.view(-1, 4), batch_priors, self.variance).cpu()
         decoded_boxes = decoded_boxes.view(num, num_priors, 4)
 
         output = torch.zeros(num, self.num_classes, self.top_k, 5)
@@ -145,8 +144,6 @@ class PriorBox(object):
                  min_sizes=(16, 32, 64, 128, 256, 512),
                  steps=(4, 8, 16, 32, 64, 128),
                  clip=False):
-
-        super(PriorBox, self).__init__()
 
         self.imh = input_size[0]
         self.imw = input_size[1]

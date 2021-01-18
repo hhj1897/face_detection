@@ -25,13 +25,13 @@ class S3FD(object):
 
         bboxes = []
         with torch.no_grad():
-            detections = self.net(image)
-            scale = torch.Tensor([w, h, w, h])
+            detections = self.net(image).detach()
+            scale = torch.Tensor([w, h, w, h]).to(detections.device)
             for i in range(detections.size(1)):
                 j = 0
                 while detections[0, i, j, 0] > self.threshold:
                     score = detections[0, i, j, 0]
-                    pt = (detections[0, i, j, 1:] * scale).detach().cpu().numpy()
+                    pt = (detections[0, i, j, 1:] * scale).cpu().numpy()
                     bbox = (pt[0], pt[1], pt[2], pt[3], score)
                     bboxes.append(bbox)
                     j += 1

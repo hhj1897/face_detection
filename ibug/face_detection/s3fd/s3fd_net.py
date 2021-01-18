@@ -103,6 +103,9 @@ class S3FDNet(nn.Module):
             nn.Conv2d(256, 2, 3, 1, padding=1),
         ])
 
+        self.priors = None
+        self.previous_size = None
+
         self.softmax = nn.Softmax(dim=-1)
         self.detect = Detect()
 
@@ -152,22 +155,20 @@ class S3FDNet(nn.Module):
             conf.append(self.conf[i](x).permute(0, 2, 3, 1).contiguous())
             loc.append(self.loc[i](x).permute(0, 2, 3, 1).contiguous())
 
-        features_maps = []
-        for i in range(len(loc)):
-            feat = []
-            feat += [loc[i].size(1), loc[i].size(2)]
-            features_maps += [feat]
+        if self.priors is None or self.previous_size != size:
+            with torch.no_grad():
+                features_maps = []
+                for i in range(len(loc)):
+                    feat = []
+                    feat += [loc[i].size(1), loc[i].size(2)]
+                    features_maps += [feat]
+                self.priors = PriorBox(size, features_maps).forward().to(self.device)
+                self.previous_size = size
 
         loc = torch.cat([o.view(o.size(0), -1) for o in loc], 1)
         conf = torch.cat([o.view(o.size(0), -1) for o in conf], 1)
+        conf = self.softmax(conf.view(conf.size(0), -1, 2))
 
-        with torch.no_grad():
-            priors = PriorBox(size, features_maps).forward()
-
-        output = self.detect(
-            loc.view(loc.size(0), -1, 4),
-            self.softmax(conf.view(conf.size(0), -1, 2)),
-            priors.type(type(x.data)).to(self.device)
-        )
+        output = self.detect(loc.view(loc.size(0), -1, 4), conf, self.priors)
 
         return output
