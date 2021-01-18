@@ -1,5 +1,5 @@
 import torch
-from itertools import product as product
+from itertools import product
 
 
 def decode(loc, priors, variances):
