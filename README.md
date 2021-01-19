@@ -14,10 +14,9 @@ pip install -e .
 ```
 
 ## How to Test
+__Note__: You will need [OpenCV](https://opencv.org/) to run the test script.
 * To test on live video: `python face_detection_test.py [-i webcam_index]`
 * To test on a video file: `python face_alignment_test.py [-i input_file] [-o output_file]`
-
-__Note__: You will need [OpenCV](https://opencv.org/) to run the test script.
 
 ## How to Use
 ```python

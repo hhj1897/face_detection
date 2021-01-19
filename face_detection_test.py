@@ -56,7 +56,7 @@ def main():
             else:
                 # Detect faces
                 start_time = time.time()
-                faces = face_detector(frame)
+                faces = face_detector(frame, rgb=False)
                 elapsed_time = time.time() - start_time
 
                 # Textural output

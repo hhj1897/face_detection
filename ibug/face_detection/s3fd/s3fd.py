@@ -14,11 +14,11 @@ class S3FD(object):
         self.net.eval()
         self.threshold = threshold
 
-    def __call__(self, image, rgb=False):
+    def __call__(self, image, rgb=True):
         w, h = image.shape[1], image.shape[0]
-        if rgb:
+        if not rgb:
             image = image[..., ::-1]
-        image = image - np.array([104.0, 117.0, 123.0])
+        image = image.astype(int) - np.array([123, 117, 104])
         image = image.transpose(2, 0, 1)
         image = image.reshape((1,) + image.shape)
         image = torch.from_numpy(image).float().to(self.device)
