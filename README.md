@@ -2,14 +2,16 @@
 A face detector implementing [S3FD](http://openaccess.thecvf.com/content_ICCV_2017/papers/Zhang_S3FD_Single_Shot_ICCV_2017_paper.pdf) \[1\] with weights trained on the [WIDER](http://shuoyang1213.me/WIDERFACE/) \[2\] dataset. Implementation of the algorithm is largely based on the code in [this repository](https://github.com/cs-giung/face-detection-pytorch).
 
 ## Prerequisites
+* [Git LFS](https://git-lfs.github.com/), needed for downloading the pretrained weights.
 * [Numpy](https://www.numpy.org/): `$pip3 install numpy`
 * [PyTorch](https://pytorch.org/): `$pip3 install torch torchvision`
 * [OpenCV](https://opencv.org/) (only needed by the test script): `$pip3 install opencv-python`
 
 ## How to Install
 ```
-git clone https://github.com/IntelligentBehaviourUnderstandingGroup/face_detection.git
+git clone https://github.com/hhj1897/face_detection.git
 cd face_detection
+git lfs pull
 pip install -e .
 ```
 
