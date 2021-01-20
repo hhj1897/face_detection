@@ -1,4 +1,5 @@
 import torch
+import numpy as np
 from itertools import product
 
 
@@ -90,11 +91,48 @@ def nms(boxes, scores, overlap=0.5, top_k=200):
     return keep, count
 
 
+def nms_np(boxes, scores, overlap=0.5, top_k=200):
+    """Apply non-maximum suppression at test time to avoid detecting too many
+    overlapping bounding boxes for a given object, using numpy (for speed).
+    Args:
+        boxes: (tensor) The location preds for the img, Shape: [num_priors,4].
+        scores: (tensor) The class predscores for the img, Shape:[num_priors].
+        overlap: (float) The overlap thresh for suppressing unnecessary boxes.
+        top_k: (int) The Maximum number of box preds to consider.
+    Return:
+        The indices of the kept boxes with respect to num_priors.
+    """
+
+    if scores.size(0) == 0:
+        return [], 0
+    else:
+        areas = torch.mul(boxes[:, 2] - boxes[:, 0], boxes[:, 3] - boxes[:, 1]).cpu().numpy()
+        x1, y1 = boxes[:, 0].cpu().numpy(), boxes[:, 1].cpu().numpy()
+        x2, y2 = boxes[:, 2].cpu().numpy(), boxes[:, 3].cpu().numpy()
+        scores = scores.cpu().numpy()
+        order = scores.argsort()[: -top_k - 1: -1]
+
+        keep = []
+        while order.size > 0:
+            i = order[0]
+            keep.append(i)
+            xx1, yy1 = np.maximum(x1[i], x1[order[1:]]), np.maximum(y1[i], y1[order[1:]])
+            xx2, yy2 = np.minimum(x2[i], x2[order[1:]]), np.minimum(y2[i], y2[order[1:]])
+
+            w, h = np.maximum(0.0, xx2 - xx1), np.maximum(0.0, yy2 - yy1)
+            ovr = w * h / (areas[i] + areas[order[1:]] - w * h)
+
+            inds = np.where(ovr <= overlap)[0]
+            order = order[inds + 1]
+
+        return keep, len(keep)
+
+
 class Detect(object):
 
     def __init__(self, num_classes=2,
                  top_k=750, nms_thresh=0.3, conf_thresh=0.05,
-                 variance=(0.1, 0.2), nms_top_k=5000):
+                 variance=(0.1, 0.2), nms_top_k=5000, use_nms_np=True):
 
         self.num_classes = num_classes
         self.top_k = top_k
@@ -102,6 +140,7 @@ class Detect(object):
         self.conf_thresh = conf_thresh
         self.variance = variance
         self.nms_top_k = nms_top_k
+        self.use_nms_np = use_nms_np
 
     def __call__(self, loc_data, conf_data, prior_data):
 
@@ -129,7 +168,10 @@ class Detect(object):
                     continue
                 l_mask = c_mask.unsqueeze(1).expand_as(boxes)
                 boxes_ = boxes[l_mask].view(-1, 4)
-                ids, count = nms(boxes_, scores, self.nms_thresh, self.nms_top_k)
+                if self.use_nms_np:
+                    ids, count = nms_np(boxes_, scores, self.nms_thresh, self.nms_top_k)
+                else:
+                    ids, count = nms(boxes_, scores, self.nms_thresh, self.nms_top_k)
                 count = count if count < self.top_k else self.top_k
 
                 output[i, cl, :count] = torch.cat((scores[ids[:count]].unsqueeze(1), boxes_[ids[:count]]), 1)

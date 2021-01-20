@@ -65,7 +65,7 @@ def main():
 
                 # Rendering
                 for face in faces:
-                    face = face.astype(int)
+                    face = face[:4].astype(int)
                     cv2.rectangle(frame, (face[0], face[1]), (face[2], face[3]), color=(0, 0, 255), thickness=2)
 
                 # Write the frame to output video (if recording)
