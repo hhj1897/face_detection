@@ -15,6 +15,8 @@ def main():
                         action='store_true', default=False)
     parser.add_argument('--threshold', '-t', help='Confidence threshold (default=0.8)',
                         type=float, default=0.8)
+    parser.add_argument('--device', '-d', help='Device to be used by the model (default=cuda:0)',
+                        default='cuda:0')
     args = parser.parse_args()
 
     # Make the models run a bit faster
@@ -25,7 +27,7 @@ def main():
     has_window = False
     try:
         # Create the face detector
-        face_detector = S3FD(threshold=args.threshold)
+        face_detector = S3FD(threshold=args.threshold, device=args.device)
         print('Face detector created.')
 
         # Open the input video
