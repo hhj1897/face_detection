@@ -27,8 +27,9 @@ class L2Norm(nn.Module):
 
 class S3FDNet(nn.Module):
 
-    def __init__(self, device='cuda'):
+    def __init__(self, config, device='cuda'):
         super(S3FDNet, self).__init__()
+        self.config = config
         self.device = device
 
         self.vgg = nn.ModuleList([
@@ -107,7 +108,7 @@ class S3FDNet(nn.Module):
         self.previous_size = None
 
         self.softmax = nn.Softmax(dim=-1)
-        self.detect = Detect()
+        self.detect = Detect(self.config)
 
     def forward(self, x):
         size = x.size()[2:]
@@ -162,7 +163,7 @@ class S3FDNet(nn.Module):
                     feat = []
                     feat += [loc[i].size(1), loc[i].size(2)]
                     features_maps += [feat]
-                self.priors = PriorBox(size, features_maps).forward().to(self.device)
+                self.priors = PriorBox(size, features_maps, self.config).forward().to(self.device)
                 self.previous_size = size
 
         loc = torch.cat([o.view(o.size(0), -1) for o in loc], 1)

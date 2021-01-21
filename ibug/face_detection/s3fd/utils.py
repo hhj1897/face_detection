@@ -130,49 +130,41 @@ def nms_np(boxes, scores, overlap=0.5, top_k=200):
 
 class Detect(object):
 
-    def __init__(self, num_classes=2,
-                 top_k=750, nms_thresh=0.3, conf_thresh=0.05,
-                 variance=(0.1, 0.2), nms_top_k=5000, use_nms_np=True):
+    def __init__(self, config):
 
-        self.num_classes = num_classes
-        self.top_k = top_k
-        self.nms_thresh = nms_thresh
-        self.conf_thresh = conf_thresh
-        self.variance = variance
-        self.nms_top_k = nms_top_k
-        self.use_nms_np = use_nms_np
+        self.config = config
 
     def __call__(self, loc_data, conf_data, prior_data):
 
         num = loc_data.size(0)
         num_priors = prior_data.size(0)
 
-        conf_preds = conf_data.view(num, num_priors, self.num_classes).transpose(2, 1).cpu()
+        conf_preds = conf_data.view(num, num_priors, self.config.num_classes).transpose(2, 1)
         batch_priors = prior_data.view(-1, num_priors, 4).expand(num, num_priors, 4)
         batch_priors = batch_priors.contiguous().view(-1, 4)
 
-        decoded_boxes = decode(loc_data.view(-1, 4), batch_priors, self.variance).cpu()
+        decoded_boxes = decode(loc_data.view(-1, 4), batch_priors, self.config.variance)
         decoded_boxes = decoded_boxes.view(num, num_priors, 4)
 
-        output = torch.zeros(num, self.num_classes, self.top_k, 5)
+        output = torch.zeros(num, self.config.num_classes, self.config.top_k, 5)
 
         for i in range(num):
             boxes = decoded_boxes[i].clone()
             conf_scores = conf_preds[i].clone()
 
-            for cl in range(1, self.num_classes):
-                c_mask = conf_scores[cl].gt(self.conf_thresh)
+            for cl in range(1, self.config.num_classes):
+                c_mask = conf_scores[cl].gt(self.config.conf_thresh)
                 scores = conf_scores[cl][c_mask]
 
                 if scores.dim() == 0:
                     continue
                 l_mask = c_mask.unsqueeze(1).expand_as(boxes)
                 boxes_ = boxes[l_mask].view(-1, 4)
-                if self.use_nms_np:
-                    ids, count = nms_np(boxes_, scores, self.nms_thresh, self.nms_top_k)
+                if self.config.use_nms_np:
+                    ids, count = nms_np(boxes_, scores, self.config.nms_thresh, self.config.nms_top_k)
                 else:
-                    ids, count = nms(boxes_, scores, self.nms_thresh, self.nms_top_k)
-                count = count if count < self.top_k else self.top_k
+                    ids, count = nms(boxes_, scores, self.config.nms_thresh, self.config.nms_top_k)
+                count = count if count < self.config.top_k else self.config.top_k
 
                 output[i, cl, :count] = torch.cat((scores[ids[:count]].unsqueeze(1), boxes_[ids[:count]]), 1)
 
@@ -181,20 +173,13 @@ class Detect(object):
 
 class PriorBox(object):
 
-    def __init__(self, input_size, feature_maps,
-                 variance=(0.1, 0.2),
-                 min_sizes=(16, 32, 64, 128, 256, 512),
-                 steps=(4, 8, 16, 32, 64, 128),
-                 clip=False):
+    def __init__(self, input_size, feature_maps, config):
 
         self.imh = input_size[0]
         self.imw = input_size[1]
         self.feature_maps = feature_maps
 
-        self.variance = variance
-        self.min_sizes = min_sizes
-        self.steps = steps
-        self.clip = clip
+        self.config = config
 
     def forward(self):
         mean = []
@@ -202,20 +187,20 @@ class PriorBox(object):
             feath = fmap[0]
             featw = fmap[1]
             for i, j in product(range(feath), range(featw)):
-                f_kw = self.imw / self.steps[k]
-                f_kh = self.imh / self.steps[k]
+                f_kw = self.imw / self.config.prior_steps[k]
+                f_kh = self.imh / self.config.prior_steps[k]
 
                 cx = (j + 0.5) / f_kw
                 cy = (i + 0.5) / f_kh
 
-                s_kw = self.min_sizes[k] / self.imw
-                s_kh = self.min_sizes[k] / self.imh
+                s_kw = self.config.prior_min_sizes[k] / self.imw
+                s_kh = self.config.prior_min_sizes[k] / self.imh
 
                 mean += [cx, cy, s_kw, s_kh]
 
         output = torch.FloatTensor(mean).view(-1, 4)
 
-        if self.clip:
+        if self.config.prior_clip:
             output.clamp_(max=1, min=0)
 
         return output
