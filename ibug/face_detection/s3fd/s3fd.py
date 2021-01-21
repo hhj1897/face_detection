@@ -24,7 +24,7 @@ class S3FD(object):
     def get_weights(name='s3fd'):
         name = name.lower()
         if name == 's3fd':
-            return os.path.realpath(os.path.join(os.path.dirname(__file__), 'models', 's3fd_weights.pth'))
+            return os.path.realpath(os.path.join(os.path.dirname(__file__), 'weights', 's3fd_weights.pth'))
         else:
             raise ValueError('name must be set to s3fd')
 

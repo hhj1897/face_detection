@@ -1,2 +1,2 @@
 . text !filter !merge !diff
-ibug/face_detection/retina_face/models/Resnet50_Final.pth filter=lfs diff=lfs merge=lfs -text
+ibug/face_detection/retina_face/weights/Resnet50_Final.pth filter=lfs diff=lfs merge=lfs -text
