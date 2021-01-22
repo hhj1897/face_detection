@@ -5,26 +5,28 @@ from types import SimpleNamespace
 from .s3fd_net import S3FDNet
 
 
-class S3FD(object):
-    def __init__(self, threshold=0.8, device='cuda:0', weights=None, config=None):
-        if weights is None:
-            weights = S3FD.get_weights()
+class S3FDPredictor(object):
+    def __init__(self, threshold=0.8, device='cuda:0', model=None, config=None):
+        self.threshold = threshold
+        self.device = device
+        if model is None:
+            self.model = S3FDPredictor.get_model()
+        else:
+            self.model = model
         if config is None:
-            self.config = S3FD.create_config()
+            self.config = S3FDPredictor.create_config()
         else:
             self.config = config
-        self.device = device
         self.net = S3FDNet(config=self.config, device=self.device).to(self.device)
-        state_dict = torch.load(weights, map_location=self.device)
-        self.net.load_state_dict(state_dict)
+        self.net.load_state_dict(torch.load(self.model.weights, map_location=self.device))
         self.net.eval()
-        self.threshold = threshold
 
     @staticmethod
-    def get_weights(name='s3fd'):
+    def get_model(name='s3fd'):
         name = name.lower()
         if name == 's3fd':
-            return os.path.realpath(os.path.join(os.path.dirname(__file__), 'weights', 's3fd_weights.pth'))
+            return SimpleNamespace(weights=os.path.realpath(os.path.join(os.path.dirname(__file__),
+                                                                         'weights', 's3fd_weights.pth')))
         else:
             raise ValueError('name must be set to s3fd')
 
@@ -52,7 +54,7 @@ class S3FD(object):
             scale = torch.Tensor([w, h, w, h]).to(detections.device)
             for i in range(detections.size(1)):
                 j = 0
-                while detections[0, i, j, 0] > self.threshold:
+                while detections[0, i, j, 0] >= self.threshold:
                     score = detections[0, i, j, 0]
                     pt = (detections[0, i, j, 1:] * scale).cpu().numpy()
                     bbox = (pt[0], pt[1], pt[2], pt[3], score)

@@ -1,10 +1,10 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from torch.autograd import Variable
-from utils.box_utils import match, log_sum_exp
-from data import cfg_mnet
+from ibug.face_detection.retina_face.utils.box_utils import match, log_sum_exp
+from ibug.face_detection.retina_face.data import cfg_mnet
 GPU = cfg_mnet['gpu_train']
+
 
 class MultiBoxLoss(nn.Module):
     """SSD Weighted Loss Function
@@ -29,7 +29,8 @@ class MultiBoxLoss(nn.Module):
         See: https://arxiv.org/pdf/1512.02325.pdf for more details.
     """
 
-    def __init__(self, num_classes, overlap_thresh, prior_for_matching, bkg_label, neg_mining, neg_pos, neg_overlap, encode_target):
+    def __init__(self, num_classes, overlap_thresh, prior_for_matching, bkg_label,
+                 neg_mining, neg_pos, neg_overlap, encode_target):
         super(MultiBoxLoss, self).__init__()
         self.num_classes = num_classes
         self.threshold = overlap_thresh
@@ -84,7 +85,6 @@ class MultiBoxLoss(nn.Module):
         landm_p = landm_data[pos_idx1].view(-1, 10)
         landm_t = landm_t[pos_idx1].view(-1, 10)
         loss_landm = F.smooth_l1_loss(landm_p, landm_t, reduction='sum')
-
 
         pos = conf_t != zeros
         conf_t[pos] = 1

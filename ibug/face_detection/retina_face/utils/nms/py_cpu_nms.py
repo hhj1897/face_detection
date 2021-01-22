@@ -7,7 +7,8 @@
 
 import numpy as np
 
-def py_cpu_nms(dets, thresh):
+
+def py_cpu_nms(dets, thresh, top_k):
     """Pure Python NMS baseline."""
     x1 = dets[:, 0]
     y1 = dets[:, 1]
@@ -16,7 +17,7 @@ def py_cpu_nms(dets, thresh):
     scores = dets[:, 4]
 
     areas = (x2 - x1 + 1) * (y2 - y1 + 1)
-    order = scores.argsort()[::-1]
+    order = scores.argsort()[: -top_k - 1: -1]
 
     keep = []
     while order.size > 0:

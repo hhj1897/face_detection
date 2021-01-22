@@ -1,7 +1,7 @@
 import cv2
 import numpy as np
 import random
-from utils.box_utils import matrix_iof
+from ibug.face_detection.retina_face.utils.box_utils import matrix_iof
 
 
 def _crop(image, boxes, labels, landm, img_dim):
@@ -59,8 +59,7 @@ def _crop(image, boxes, labels, landm, img_dim):
         landms_t[:, :, :2] = np.minimum(landms_t[:, :, :2], roi[2:] - roi[:2])
         landms_t = landms_t.reshape([-1, 10])
 
-
-	# make sure that the cropped image contains at least one face > 16 pixel at training image scale
+        # make sure that the cropped image contains at least one face > 16 pixel at training image scale
         b_w_t = (boxes_t[:, 2] - boxes_t[:, 0] + 1) / w * img_dim
         b_h_t = (boxes_t[:, 3] - boxes_t[:, 1] + 1) / h * img_dim
         mask_b = np.minimum(b_w_t, b_h_t) > 0.0
@@ -79,7 +78,7 @@ def _crop(image, boxes, labels, landm, img_dim):
 
 def _distort(image):
 
-    def _convert(image, alpha=1, beta=0):
+    def _convert(image, alpha=1.0, beta=0.0):
         tmp = image.astype(float) * alpha + beta
         tmp[tmp < 0] = 0
         tmp[tmp > 255] = 255
@@ -89,21 +88,21 @@ def _distort(image):
 
     if random.randrange(2):
 
-        #brightness distortion
+        # brightness distortion
         if random.randrange(2):
             _convert(image, beta=random.uniform(-32, 32))
 
-        #contrast distortion
+        # contrast distortion
         if random.randrange(2):
             _convert(image, alpha=random.uniform(0.5, 1.5))
 
         image = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
 
-        #saturation distortion
+        # saturation distortion
         if random.randrange(2):
             _convert(image[:, :, 1], alpha=random.uniform(0.5, 1.5))
 
-        #hue distortion
+        # hue distortion
         if random.randrange(2):
             tmp = image[:, :, 0].astype(int) + random.randint(-18, 18)
             tmp %= 180
@@ -113,17 +112,17 @@ def _distort(image):
 
     else:
 
-        #brightness distortion
+        # brightness distortion
         if random.randrange(2):
             _convert(image, beta=random.uniform(-32, 32))
 
         image = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
 
-        #saturation distortion
+        # saturation distortion
         if random.randrange(2):
             _convert(image[:, :, 1], alpha=random.uniform(0.5, 1.5))
 
-        #hue distortion
+        # hue distortion
         if random.randrange(2):
             tmp = image[:, :, 0].astype(int) + random.randint(-18, 18)
             tmp %= 180
@@ -131,7 +130,7 @@ def _distort(image):
 
         image = cv2.cvtColor(image, cv2.COLOR_HSV2BGR)
 
-        #contrast distortion
+        # contrast distortion
         if random.randrange(2):
             _convert(image, alpha=random.uniform(0.5, 1.5))
 

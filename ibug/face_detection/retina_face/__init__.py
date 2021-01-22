@@ -1,1 +1,1 @@
-from .retina_face import RetinaFace
+from .retina_face_predictor import RetinaFacePredictor

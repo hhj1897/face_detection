@@ -1,1 +1,1 @@
-from .s3fd import S3FD
+from .s3fd_predictor import S3FDPredictor

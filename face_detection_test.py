@@ -3,7 +3,7 @@ import cv2
 import time
 import torch
 from argparse import ArgumentParser
-from ibug.face_detection import S3FD
+from ibug.face_detection import S3FDPredictor, RetinaFacePredictor
 
 
 def main():
@@ -27,7 +27,8 @@ def main():
     has_window = False
     try:
         # Create the face detector
-        face_detector = S3FD(threshold=args.threshold, device=args.device)
+        face_detector = RetinaFacePredictor(threshold=args.threshold, device=args.device,
+                                            model=RetinaFacePredictor.get_model('resnet50'))
         print('Face detector created.')
 
         # Open the input video
