@@ -3,7 +3,7 @@ import cv2
 import time
 import torch
 from argparse import ArgumentParser
-from ibug.face_detection import S3FDPredictor, RetinaFacePredictor
+from ibug.face_detection import RetinaFacePredictor, S3FDPredictor
 
 
 def main():
@@ -15,8 +15,8 @@ def main():
                         action='store_true', default=False)
     parser.add_argument('--threshold', '-t', help='Confidence threshold (default=0.8)',
                         type=float, default=0.8)
-    parser.add_argument('--method', '-m', help='Method to use, can be either S3FD or RatinaFace (default=S3FD)',
-                        default='s3fd')
+    parser.add_argument('--method', '-m', help='Method to use, can be either RatinaFace or S3FD (default=RatinaFace)',
+                        default='retinaface')
     parser.add_argument('--weights', '-w',
                         help='Weights to load, can be either resnet50 or mobilenet0.25 when using RetinaFace',
                         default=None)
@@ -33,16 +33,16 @@ def main():
     try:
         # Create the face detector
         args.method = args.method.lower()
-        if args.method == 's3fd':
-            face_detector = S3FDPredictor(threshold=args.threshold, device=args.device,
-                                          model=(S3FDPredictor.get_model(args.weights)
-                                                 if args.weights else None))
-            print('Face detector created using S3FD.')
-        elif args.method == 'retinaface':
+        if args.method == 'retinaface':
             face_detector = RetinaFacePredictor(threshold=args.threshold, device=args.device,
                                                 model=(RetinaFacePredictor.get_model(args.weights)
                                                        if args.weights else None))
             print('Face detector created using RetinaFace.')
+        elif args.method == 's3fd':
+            face_detector = S3FDPredictor(threshold=args.threshold, device=args.device,
+                                          model=(S3FDPredictor.get_model(args.weights)
+                                                 if args.weights else None))
+            print('Face detector created using S3FD.')
 
         # Open the input video
         using_webcam = not os.path.exists(args.input)
