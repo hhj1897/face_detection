@@ -15,15 +15,12 @@ class RetinaFacePredictor(object):
         self.threshold = threshold
         self.device = device
         if model is None:
-            self.model = RetinaFacePredictor.get_model()
-        else:
-            self.model = model
+            model = RetinaFacePredictor.get_model()
         if config is None:
-            self.config = RetinaFacePredictor.create_config()
-        else:
-            self.config = config
-        self.net = RetinaFace(cfg=self.model.config, phase='test').to(self.device)
-        pretrained_dict = torch.load(self.model.weights, map_location=self.device)
+            config = RetinaFacePredictor.create_config()
+        self.config = SimpleNamespace(**model.config.__dict__, **config.__dict__)
+        self.net = RetinaFace(cfg=self.config.__dict__, phase='test').to(self.device)
+        pretrained_dict = torch.load(model.weights, map_location=self.device)
         if 'state_dict' in pretrained_dict.keys():
             pretrained_dict = {key.split('module.', 1)[-1] if key.startswith('module.') else key: value
                                for key, value in pretrained_dict['state_dict'].items()}
@@ -41,11 +38,11 @@ class RetinaFacePredictor(object):
         if name == 'resnet50':
             return SimpleNamespace(weights=os.path.realpath(os.path.join(os.path.dirname(__file__),
                                                                          'weights', 'Resnet50_Final.pth')),
-                                   config=deepcopy(cfg_re50))
+                                   config=SimpleNamespace(**deepcopy(cfg_re50)))
         elif name == 'mobilenet0.25':
             return SimpleNamespace(weights=os.path.realpath(os.path.join(os.path.dirname(__file__),
                                                                          'weights', 'mobilenet0.25_Final.pth')),
-                                   config=deepcopy(cfg_mnet))
+                                   config=SimpleNamespace(**deepcopy(cfg_mnet)))
         else:
             raise ValueError('name must be set to either resnet50 or mobilenet0.25')
 
@@ -65,14 +62,14 @@ class RetinaFacePredictor(object):
             loc, conf, landms = self.net(image)
             image_size = (im_height, im_width)
             if self.priors is None or self.previous_size != image_size:
-                self.priors = PriorBox(self.model.config, image_size=image_size).forward().to(self.device)
+                self.priors = PriorBox(self.config.__dict__, image_size=image_size).forward().to(self.device)
                 self.previous_size = image_size
             prior_data = self.priors.data
-            boxes = decode(loc.data.squeeze(0), prior_data, self.model.config['variance'])
+            boxes = decode(loc.data.squeeze(0), prior_data, self.config.variance)
             boxes = boxes * scale
             boxes = boxes.detach().cpu().numpy()
             scores = conf.detach().squeeze(0).data.cpu().numpy()[:, 1]
-            landms = decode_landm(landms.data.squeeze(0), prior_data, self.model.config['variance'])
+            landms = decode_landm(landms.data.squeeze(0), prior_data, self.config.variance)
             scale1 = torch.Tensor([image.shape[3], image.shape[2], image.shape[3], image.shape[2],
                                    image.shape[3], image.shape[2], image.shape[3], image.shape[2],
                                    image.shape[3], image.shape[2]]).to(self.device)

@@ -10,15 +10,12 @@ class S3FDPredictor(object):
         self.threshold = threshold
         self.device = device
         if model is None:
-            self.model = S3FDPredictor.get_model()
-        else:
-            self.model = model
+            model = S3FDPredictor.get_model()
         if config is None:
-            self.config = S3FDPredictor.create_config()
-        else:
-            self.config = config
+            config = S3FDPredictor.create_config()
+        self.config = SimpleNamespace(**model.config.__dict__, **config.__dict__)
         self.net = S3FDNet(config=self.config, device=self.device).to(self.device)
-        self.net.load_state_dict(torch.load(self.model.weights, map_location=self.device))
+        self.net.load_state_dict(torch.load(model.weights, map_location=self.device))
         self.net.eval()
 
     @staticmethod
@@ -26,18 +23,17 @@ class S3FDPredictor(object):
         name = name.lower()
         if name == 's3fd':
             return SimpleNamespace(weights=os.path.realpath(os.path.join(os.path.dirname(__file__),
-                                                                         'weights', 's3fd_weights.pth')))
+                                                                         'weights', 's3fd_weights.pth')),
+                                   config=SimpleNamespace(num_classes=2, variance=(0.1, 0.2),
+                                                          prior_min_sizes=(16, 32, 64, 128, 256, 512),
+                                                          prior_steps=(4, 8, 16, 32, 64, 128), prior_clip=False))
         else:
             raise ValueError('name must be set to s3fd')
 
     @staticmethod
-    def create_config(num_classes=2, top_k=750, conf_thresh=0.05, variance=(0.1, 0.2),
-                      nms_thresh=0.3, nms_top_k=5000, use_nms_np=True,
-                      prior_min_sizes=(16, 32, 64, 128, 256, 512),
-                      prior_steps=(4, 8, 16, 32, 64, 128), prior_clip=False):
-        return SimpleNamespace(num_classes=num_classes, top_k=top_k, conf_thresh=conf_thresh, variance=variance,
-                               nms_thresh=nms_thresh, nms_top_k=nms_top_k, use_nms_np=use_nms_np,
-                               prior_min_sizes=prior_min_sizes, prior_steps=prior_steps, prior_clip=prior_clip)
+    def create_config(top_k=750, conf_thresh=0.05, nms_thresh=0.3, nms_top_k=5000, use_nms_np=True):
+        return SimpleNamespace(top_k=top_k, conf_thresh=conf_thresh, nms_thresh=nms_thresh,
+                               nms_top_k=nms_top_k, use_nms_np=use_nms_np)
 
     def __call__(self, image, rgb=True):
         w, h = image.shape[1], image.shape[0]
