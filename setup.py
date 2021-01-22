@@ -34,7 +34,7 @@ config = {
     'author': 'Jie Shen',
     'author_email': 'js1907@imperial.ac.uk',
     'packages': ['ibug.face_detection'],
-    'install_requires': ['numpy>=1.15.0', 'torch>=1.0.1'],
+    'install_requires': ['numpy>=1.15.0', 'torch>=1.0.1', 'torchvision>=0.3.0'],
     'zip_safe': False
 }
 clean_repo()

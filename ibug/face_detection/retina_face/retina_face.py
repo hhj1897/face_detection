@@ -1,18 +1,18 @@
-import os
 import torch
 import torch.nn as nn
-import torchvision.models._utils as _utils
 import torch.nn.functional as F
-from .net import MobileNetV1, FPN, SSH
+import torchvision.models as models
+import torchvision.models._utils as _utils
+from .retina_face_net import MobileNetV1, FPN, SSH
 
 
 class ClassHead(nn.Module):
     def __init__(self, inchannels=512, num_anchors=3):
-        super(ClassHead,self).__init__()
+        super(ClassHead, self).__init__()
         self.num_anchors = num_anchors
         self.conv1x1 = nn.Conv2d(inchannels, self.num_anchors*2, kernel_size=(1, 1), stride=1, padding=0)
 
-    def forward(self,x):
+    def forward(self, x):
         out = self.conv1x1(x)
         out = out.permute(0, 2, 3, 1).contiguous()
         
@@ -21,10 +21,10 @@ class ClassHead(nn.Module):
 
 class BboxHead(nn.Module):
     def __init__(self, inchannels=512, num_anchors=3):
-        super(BboxHead,self).__init__()
+        super(BboxHead, self).__init__()
         self.conv1x1 = nn.Conv2d(inchannels, num_anchors*4, kernel_size=(1, 1), stride=1,padding=0)
 
-    def forward(self,x):
+    def forward(self, x):
         out = self.conv1x1(x)
         out = out.permute(0, 2, 3, 1).contiguous()
 
@@ -33,12 +33,12 @@ class BboxHead(nn.Module):
 
 class LandmarkHead(nn.Module):
     def __init__(self, inchannels=512, num_anchors=3):
-        super(LandmarkHead,self).__init__()
+        super(LandmarkHead, self).__init__()
         self.conv1x1 = nn.Conv2d(inchannels,num_anchors*10, kernel_size=(1, 1), stride=1, padding=0)
 
-    def forward(self,x):
+    def forward(self, x):
         out = self.conv1x1(x)
-        out = out.permute(0,2,3,1).contiguous()
+        out = out.permute(0, 2, 3, 1).contiguous()
 
         return out.view(out.shape[0], -1, 10)
 
@@ -55,18 +55,8 @@ class RetinaFace(nn.Module):
         if cfg['name'] == 'mobilenet0.25':
             backbone = MobileNetV1()
             if cfg['pretrain']:
-                checkpoint = torch.load(
-                    os.path.join(os.path.dirname(__file__), '../weights/mobilenetV1X0.25_pretrain.tar'),
-                    map_location=torch.device('cpu'))
-                from collections import OrderedDict
-                new_state_dict = OrderedDict()
-                for k, v in checkpoint['state_dict'].items():
-                    name = k[7:]  # remove module.
-                    new_state_dict[name] = v
-                # load params
-                backbone.load_state_dict(new_state_dict)
+                raise ValueError('cfg[\'pretrain\'] cannot be set to True for mobilenet0.25')
         elif cfg['name'] == 'Resnet50':
-            import torchvision.models as models
             backbone = models.resnet50(pretrained=cfg['pretrain'])
 
         self.body = _utils.IntermediateLayerGetter(backbone, cfg['return_layers'])
@@ -86,16 +76,16 @@ class RetinaFace(nn.Module):
         self.BboxHead = self._make_bbox_head(fpn_num=3, inchannels=cfg['out_channel'])
         self.LandmarkHead = self._make_landmark_head(fpn_num=3, inchannels=cfg['out_channel'])
 
-    def _make_class_head(self,fpn_num=3, inchannels=64, anchor_num=2):
+    def _make_class_head(self, fpn_num=3, inchannels=64, anchor_num=2):
         classhead = nn.ModuleList()
         for i in range(fpn_num):
-            classhead.append(ClassHead(inchannels,anchor_num))
+            classhead.append(ClassHead(inchannels, anchor_num))
         return classhead
     
     def _make_bbox_head(self, fpn_num=3, inchannels=64, anchor_num=2):
         bboxhead = nn.ModuleList()
         for i in range(fpn_num):
-            bboxhead.append(BboxHead(inchannels,anchor_num))
+            bboxhead.append(BboxHead(inchannels, anchor_num))
         return bboxhead
 
     def _make_landmark_head(self, fpn_num=3, inchannels=64, anchor_num=2):

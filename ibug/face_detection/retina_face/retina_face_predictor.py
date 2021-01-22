@@ -3,11 +3,11 @@ import torch
 import numpy as np
 from copy import deepcopy
 from types import SimpleNamespace
-from .layers import PriorBox
-from .data import cfg_mnet, cfg_re50
-from .models.retinaface import RetinaFace
-from .utils.nms.py_cpu_nms import py_cpu_nms
-from .utils.box_utils import decode, decode_landm
+from .prior_box import PriorBox
+from .py_cpu_nms import py_cpu_nms
+from .retina_face import RetinaFace
+from .config import cfg_mnet, cfg_re50
+from .box_utils import decode, decode_landm
 
 
 class RetinaFacePredictor(object):
@@ -39,17 +39,13 @@ class RetinaFacePredictor(object):
     def get_model(name='resnet50'):
         name = name.lower()
         if name == 'resnet50':
-            config = deepcopy(cfg_re50)
-            config['pretrain'] = False
             return SimpleNamespace(weights=os.path.realpath(os.path.join(os.path.dirname(__file__),
                                                                          'weights', 'Resnet50_Final.pth')),
-                                   config=config)
+                                   config=deepcopy(cfg_re50))
         elif name == 'mobilenet0.25':
-            config = deepcopy(cfg_mnet)
-            config['pretrain'] = False
             return SimpleNamespace(weights=os.path.realpath(os.path.join(os.path.dirname(__file__),
                                                                          'weights', 'mobilenet0.25_Final.pth')),
-                                   config=config)
+                                   config=deepcopy(cfg_mnet))
         else:
             raise ValueError('name must be set to either resnet50 or mobilenet0.25')
 

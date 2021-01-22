@@ -15,6 +15,11 @@ def main():
                         action='store_true', default=False)
     parser.add_argument('--threshold', '-t', help='Confidence threshold (default=0.8)',
                         type=float, default=0.8)
+    parser.add_argument('--method', '-m', help='Method to use, can be either S3FD or RatinaFace (default=S3FD)',
+                        default='s3fd')
+    parser.add_argument('--weights', '-w',
+                        help='Weights to load, can be either resnet50 or mobilenet0.25 when using RetinaFace',
+                        default=None)
     parser.add_argument('--device', '-d', help='Device to be used by the model (default=cuda:0)',
                         default='cuda:0')
     args = parser.parse_args()
@@ -27,9 +32,17 @@ def main():
     has_window = False
     try:
         # Create the face detector
-        face_detector = RetinaFacePredictor(threshold=args.threshold, device=args.device,
-                                            model=RetinaFacePredictor.get_model('resnet50'))
-        print('Face detector created.')
+        args.method = args.method.lower()
+        if args.method == 's3fd':
+            face_detector = S3FDPredictor(threshold=args.threshold, device=args.device,
+                                          model=(S3FDPredictor.get_model(args.weights)
+                                                 if args.weights else None))
+            print('Face detector created using S3FD.')
+        elif args.method == 'retinaface':
+            face_detector = RetinaFacePredictor(threshold=args.threshold, device=args.device,
+                                                model=(RetinaFacePredictor.get_model(args.weights)
+                                                       if args.weights else None))
+            print('Face detector created using RetinaFace.')
 
         # Open the input video
         using_webcam = not os.path.exists(args.input)
@@ -68,8 +81,11 @@ def main():
 
                 # Rendering
                 for face in faces:
-                    face = face[:4].astype(int)
-                    cv2.rectangle(frame, (face[0], face[1]), (face[2], face[3]), color=(0, 0, 255), thickness=2)
+                    bbox = face[:4].astype(int)
+                    cv2.rectangle(frame, (bbox[0], bbox[1]), (bbox[2], bbox[3]), color=(0, 0, 255), thickness=2)
+                    if len(face) > 5:
+                        for pts in face[5:].reshape((-1, 2)):
+                            cv2.circle(frame, tuple(pts.astype(int).tolist()), 3, (0, 0, 255), -1)
 
                 # Write the frame to output video (if recording)
                 if out_vid is not None:
