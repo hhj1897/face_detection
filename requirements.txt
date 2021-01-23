@@ -1,5 +1,5 @@
 numpy>=1.15.0
-scipy>=1.1.0g
+scipy>=1.1.0
 torch>=1.0.1
 torchvision>=0.3.0
 opencv-python>= 3.4.1
