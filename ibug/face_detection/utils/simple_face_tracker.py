@@ -59,7 +59,7 @@ class SimpleFaceTracker(object):
         for row, col in zip(*linear_sum_assignment(distances)):
             if distances[row, col] <= iou_distance_threshold:
                 tracked_ids[row] = self._tracklets[col]['id']
-                self._tracklets[col]['bbox'] = face_boxes[row].copy()
+                self._tracklets[col]['bbox'] = face_boxes[row, :4].copy()
                 self._tracklets[col]['area'] = face_areas[row]
                 self._tracklets[col]['tracked'] = True
 
@@ -70,7 +70,7 @@ class SimpleFaceTracker(object):
         for idx, face_box in enumerate(face_boxes):
             if face_areas[idx] >= min_face_area and tracked_ids[idx] is None:
                 self._tracklet_counter += 1
-                self._tracklets.append({'bbox': face_box.copy(), 'area': face_areas[idx],
+                self._tracklets.append({'bbox': face_box[:4].copy(), 'area': face_areas[idx],
                                         'id': self._tracklet_counter, 'tracked': True})
                 tracked_ids[idx] = self._tracklets[-1]['id']
 

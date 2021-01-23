@@ -30,7 +30,7 @@ if _version is None:
 config = {
     'name': 'ibug_face_detection',
     'version': _version,
-    'description': 'Face detection using single-shot scale-invariant detector (S3FD).',
+    'description': 'A collection of pretrained face detectors including S3FD and RetinaFace.',
     'author': 'Jie Shen',
     'author_email': 'js1907@imperial.ac.uk',
     'packages': ['ibug.face_detection'],
