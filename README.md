@@ -1,5 +1,7 @@
 # face_detection
-A face detector implementing [S3FD](http://openaccess.thecvf.com/content_ICCV_2017/papers/Zhang_S3FD_Single_Shot_ICCV_2017_paper.pdf) \[1\] with weights trained on the [WIDER](http://shuoyang1213.me/WIDERFACE/) \[2\] dataset. Implementation of the algorithm is largely based on the code in [this repository](https://github.com/cs-giung/face-detection-pytorch).
+A collection of pretrained face detectors including the following:
+* [RetinaFace](https://arxiv.org/pdf/1905.00641) \[3\] with weights trained on the [WIDER](http://shuoyang1213.me/WIDERFACE/) \[2\] dataset
+* [S3FD](http://openaccess.thecvf.com/content_ICCV_2017/papers/Zhang_S3FD_Single_Shot_ICCV_2017_paper.pdf) \[1\] with weights trained on the [WIDER](http://shuoyang1213.me/WIDERFACE/) \[2\] dataset. Implementation of the algorithm is largely based on the code in [this repository](https://github.com/cs-giung/face-detection-pytorch).
 
 ## Prerequisites
 * [Git LFS](https://git-lfs.github.com/), needed for downloading the pretrained weights that are larger than 100 MB.
@@ -22,7 +24,7 @@ __Note__: You will need [OpenCV](https://opencv.org/) to run the test script.
 
 ## How to Use
 ```python
-from ibug.face_detection import S3FD
+from ibug.face_detection import S3FDPredictor
 # Create a S3FD face detector with the confidence threshold set to 0.8
 face_detector = S3FD(thershold=0.8, device='cuda:0')
 

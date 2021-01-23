@@ -43,6 +43,8 @@ def main():
                                           model=(S3FDPredictor.get_model(args.weights)
                                                  if args.weights else None))
             print('Face detector created using S3FD.')
+        else:
+            raise ValueError('method must be set to either RetinaFace or S3FD')
 
         # Open the input video
         using_webcam = not os.path.exists(args.input)
