@@ -66,9 +66,11 @@ detected_faces = face_detector(image, rgb=False)
 for face in detected_faces:
     pitch, yaw, roll = pose_estimator(face[5:].reshape((-1, 2)))
 
-# Tracking the faces. The return value is a list containing the tracklet ID
-# (>=1) of the detected faces. If a face cannot be tracked because it is too
-# small, its corresponding element in the list would be set to None.
+# If you are processing frames in a video, you can also perform rudimentary
+# face tracking, as shown below. The return value is a list containing the 
+# tracklet ID (>=1) of the detected faces. If a face cannot be tracked 
+# because it is too small, its corresponding element in the list would be
+# set to None.
 tracked_ids = face_tracker(detected_faces[:, :4])
 ```
 
