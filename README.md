@@ -22,7 +22,7 @@ pip install -e .
 
 ## How to Test
 * To test on live video: `python face_detection_test.py [-i webcam_index]`
-* To test on a video file: `python face_detectiong_test.py [-i input_file] [-o output_file]`
+* To test on a video file: `python face_detection_test.py [-i input_file] [-o output_file]`
 
 By default, the test script would use RetinaFace with Resnet50, but you can change that using `--method` and `--weights` options. 
 
