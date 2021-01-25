@@ -50,6 +50,7 @@ class RetinaFacePredictor(object):
     def create_config(top_k=750, conf_thresh=0.02, nms_thresh=0.4, nms_top_k=5000):
         return SimpleNamespace(top_k=top_k, conf_thresh=conf_thresh, nms_thresh=nms_thresh, nms_top_k=nms_top_k)
 
+    @torch.no_grad()
     def __call__(self, image, rgb=True):
         im_height, im_width, _ = image.shape
         if rgb:
@@ -58,23 +59,22 @@ class RetinaFacePredictor(object):
         image = image.transpose(2, 0, 1)
         image = torch.from_numpy(image).unsqueeze(0).float().to(self.device)
         scale = torch.Tensor([im_width, im_height, im_width, im_height]).to(self.device)
-        with torch.no_grad():
-            loc, conf, landms = self.net(image)
-            image_size = (im_height, im_width)
-            if self.priors is None or self.previous_size != image_size:
-                self.priors = PriorBox(self.config.__dict__, image_size=image_size).forward().to(self.device)
-                self.previous_size = image_size
-            prior_data = self.priors.data
-            boxes = decode(loc.data.squeeze(0), prior_data, self.config.variance)
-            boxes = boxes * scale
-            boxes = boxes.detach().cpu().numpy()
-            scores = conf.detach().squeeze(0).data.cpu().numpy()[:, 1]
-            landms = decode_landm(landms.data.squeeze(0), prior_data, self.config.variance)
-            scale1 = torch.Tensor([image.shape[3], image.shape[2], image.shape[3], image.shape[2],
-                                   image.shape[3], image.shape[2], image.shape[3], image.shape[2],
-                                   image.shape[3], image.shape[2]]).to(self.device)
-            landms = landms * scale1
-            landms = landms.detach().cpu().numpy()
+        loc, conf, landms = self.net(image)
+        image_size = (im_height, im_width)
+        if self.priors is None or self.previous_size != image_size:
+            self.priors = PriorBox(self.config.__dict__, image_size=image_size).forward().to(self.device)
+            self.previous_size = image_size
+        prior_data = self.priors.data
+        boxes = decode(loc.data.squeeze(0), prior_data, self.config.variance)
+        boxes = boxes * scale
+        boxes = boxes.detach().cpu().numpy()
+        scores = conf.detach().squeeze(0).data.cpu().numpy()[:, 1]
+        landms = decode_landm(landms.data.squeeze(0), prior_data, self.config.variance)
+        scale1 = torch.Tensor([image.shape[3], image.shape[2], image.shape[3], image.shape[2],
+                               image.shape[3], image.shape[2], image.shape[3], image.shape[2],
+                               image.shape[3], image.shape[2]]).to(self.device)
+        landms = landms * scale1
+        landms = landms.detach().cpu().numpy()
 
         # ignore low scores
         inds = np.where(scores > self.config.conf_thresh)[0]

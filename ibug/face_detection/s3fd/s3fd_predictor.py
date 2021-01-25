@@ -35,6 +35,7 @@ class S3FDPredictor(object):
         return SimpleNamespace(top_k=top_k, conf_thresh=conf_thresh, nms_thresh=nms_thresh,
                                nms_top_k=nms_top_k, use_nms_np=use_nms_np)
 
+    @torch.no_grad()
     def __call__(self, image, rgb=True):
         w, h = image.shape[1], image.shape[0]
         if not rgb:
@@ -45,17 +46,16 @@ class S3FDPredictor(object):
         image = torch.from_numpy(image).float().to(self.device)
 
         bboxes = []
-        with torch.no_grad():
-            detections = self.net(image).detach()
-            scale = torch.Tensor([w, h, w, h]).to(detections.device)
-            for i in range(detections.size(1)):
-                j = 0
-                while detections[0, i, j, 0] >= self.threshold:
-                    score = detections[0, i, j, 0]
-                    pt = (detections[0, i, j, 1:] * scale).cpu().numpy()
-                    bbox = (pt[0], pt[1], pt[2], pt[3], score)
-                    bboxes.append(bbox)
-                    j += 1
+        detections = self.net(image).detach()
+        scale = torch.Tensor([w, h, w, h]).to(detections.device)
+        for i in range(detections.size(1)):
+            j = 0
+            while detections[0, i, j, 0] >= self.threshold:
+                score = detections[0, i, j, 0]
+                pt = (detections[0, i, j, 1:] * scale).cpu().numpy()
+                bbox = (pt[0], pt[1], pt[2], pt[3], score)
+                bboxes.append(bbox)
+                j += 1
         if len(bboxes) > 0:
             return np.array(bboxes)
         else:
