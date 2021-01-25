@@ -11,6 +11,8 @@ def main():
     parser = ArgumentParser()
     parser.add_argument('--input', '-i', help='Input video path or webcam index', default=0)
     parser.add_argument('--output', '-o', help='Output file path', default=None)
+    parser.add_argument('--benchmark', '-b', help='Enable benchmark mode for CUDNN',
+                        action='store_true', default=False)
     parser.add_argument('--no-display', '-n', help='No display if processing a video file',
                         action='store_true', default=False)
     parser.add_argument('--threshold', '-t', help='Confidence threshold (default=0.8)',
@@ -24,8 +26,8 @@ def main():
                         default='cuda:0')
     args = parser.parse_args()
 
-    # Make the models run a bit faster
-    torch.backends.cudnn.benchmark = True
+    # Set benchmark mode flag for CUDNN
+    torch.backends.cudnn.benchmark = args.benchmark
 
     vid = None
     out_vid = None
