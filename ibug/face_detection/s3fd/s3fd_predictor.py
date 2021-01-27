@@ -46,7 +46,7 @@ class S3FDPredictor(object):
         image = torch.from_numpy(image).float().to(self.device)
 
         bboxes = []
-        detections = self.net(image).detach()
+        detections = self.net(image)
         scale = torch.Tensor([w, h, w, h]).to(detections.device)
         for i in range(detections.size(1)):
             j = 0

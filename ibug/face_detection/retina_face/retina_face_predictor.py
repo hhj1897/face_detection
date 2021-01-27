@@ -67,14 +67,14 @@ class RetinaFacePredictor(object):
         prior_data = self.priors.data
         boxes = decode(loc.data.squeeze(0), prior_data, self.config.variance)
         boxes = boxes * scale
-        boxes = boxes.detach().cpu().numpy()
-        scores = conf.detach().squeeze(0).data.cpu().numpy()[:, 1]
+        boxes = boxes.cpu().numpy()
+        scores = conf.squeeze(0).data.cpu().numpy()[:, 1]
         landms = decode_landm(landms.data.squeeze(0), prior_data, self.config.variance)
         scale1 = torch.Tensor([image.shape[3], image.shape[2], image.shape[3], image.shape[2],
                                image.shape[3], image.shape[2], image.shape[3], image.shape[2],
                                image.shape[3], image.shape[2]]).to(self.device)
         landms = landms * scale1
-        landms = landms.detach().cpu().numpy()
+        landms = landms.cpu().numpy()
 
         # ignore low scores
         inds = np.where(scores > self.config.conf_thresh)[0]
