@@ -54,7 +54,7 @@ class RetinaFacePredictor(object):
     def __call__(self, image, rgb=True):
         im_height, im_width, _ = image.shape
         if rgb:
-            image = image[::-1]
+            image = image[..., ::-1]
         image = image.astype(int) - np.array([104, 117, 123])
         image = image.transpose(2, 0, 1)
         image = torch.from_numpy(image).unsqueeze(0).float().to(self.device)
