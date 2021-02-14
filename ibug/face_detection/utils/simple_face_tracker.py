@@ -1,31 +1,35 @@
 import numpy as np
+from typing import List, Optional
 from scipy.optimize import linear_sum_assignment
 
 
+__all__ = ['SimpleFaceTracker']
+
+
 class SimpleFaceTracker(object):
-    def __init__(self, iou_threshold=0.4, minimum_face_size=0.0):
+    def __init__(self, iou_threshold: float = 0.4, minimum_face_size: float = 0.0) -> None:
         self._iou_threshold = iou_threshold
         self._minimum_face_size = minimum_face_size
         self._tracklets = []
         self._tracklet_counter = 0
 
     @property
-    def iou_threshold(self):
+    def iou_threshold(self) -> float:
         return self._iou_threshold
 
     @iou_threshold.setter
-    def iou_threshold(self, threshold):
+    def iou_threshold(self, threshold: float) -> None:
         self._iou_threshold = threshold
 
     @property
-    def minimum_face_size(self):
+    def minimum_face_size(self) -> float:
         return self._minimum_face_size
 
     @minimum_face_size.setter
-    def minimum_face_size(self, face_size):
+    def minimum_face_size(self, face_size: float) -> None:
         self._minimum_face_size = face_size
 
-    def __call__(self, face_boxes):
+    def __call__(self, face_boxes: np.ndarray) -> List[Optional[int]]:
         # Calculate area of the faces
         face_areas = np.abs((face_boxes[:, 2] - face_boxes[:, 0]) * (face_boxes[:, 3] - face_boxes[:, 1]))
 
@@ -76,7 +80,7 @@ class SimpleFaceTracker(object):
 
         return tracked_ids
 
-    def reset(self, reset_tracklet_counter=True):
+    def reset(self, reset_tracklet_counter: bool = True) -> None:
         self._tracklets = []
         if reset_tracklet_counter:
             self._tracklet_counter = 0

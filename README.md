@@ -1,4 +1,4 @@
-# face_detection
+# ibug.face_detection
 A collection of pretrained face detectors including:
 * [S3FD](http://openaccess.thecvf.com/content_ICCV_2017/papers/Zhang_S3FD_Single_Shot_ICCV_2017_paper.pdf) \[1\] with weights trained on the [WIDER](http://shuoyang1213.me/WIDERFACE/) \[2\] dataset. Implementation of the algorithm is based on this repository: [https://github.com/cs-giung/face-detection-pytorch](https://github.com/cs-giung/face-detection-pytorch).
 * [RetinaFace](https://arxiv.org/pdf/1905.00641) \[3\] with weights trained on the [WIDER](http://shuoyang1213.me/WIDERFACE/) \[2\] dataset. Wights for networks using either Resnet50 or MobileNet0.25 as the backbone are included. The implementation is based on this repository: [https://github.com/biubug6/Pytorch_Retinaface](https://github.com/biubug6/Pytorch_Retinaface).

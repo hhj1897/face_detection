@@ -3,6 +3,7 @@ import torch
 import numpy as np
 from copy import deepcopy
 from types import SimpleNamespace
+from typing import Union, Optional
 from .prior_box import PriorBox
 from .py_cpu_nms import py_cpu_nms
 from .retina_face import RetinaFace
@@ -10,8 +11,12 @@ from .config import cfg_mnet, cfg_re50
 from .box_utils import decode, decode_landm
 
 
+__all__ = ['RetinaFacePredictor']
+
+
 class RetinaFacePredictor(object):
-    def __init__(self, threshold=0.8, device='cuda:0', model=None, config=None):
+    def __init__(self, threshold: float = 0.8, device: Union[str, torch.device] = 'cuda:0',
+                 model: Optional[SimpleNamespace] = None, config: Optional[SimpleNamespace] = None) -> None:
         self.threshold = threshold
         self.device = device
         if model is None:
@@ -33,8 +38,8 @@ class RetinaFacePredictor(object):
         self.previous_size = None
 
     @staticmethod
-    def get_model(name='resnet50'):
-        name = name.lower()
+    def get_model(name: str = 'resnet50') -> SimpleNamespace:
+        name = name.lower().strip()
         if name == 'resnet50':
             return SimpleNamespace(weights=os.path.realpath(os.path.join(os.path.dirname(__file__),
                                                                          'weights', 'Resnet50_Final.pth')),
@@ -47,11 +52,12 @@ class RetinaFacePredictor(object):
             raise ValueError('name must be set to either resnet50 or mobilenet0.25')
 
     @staticmethod
-    def create_config(top_k=750, conf_thresh=0.02, nms_thresh=0.4, nms_top_k=5000):
+    def create_config(top_k: int = 750, conf_thresh: float = 0.02,
+                      nms_thresh: float = 0.4, nms_top_k: int = 5000) -> SimpleNamespace:
         return SimpleNamespace(top_k=top_k, conf_thresh=conf_thresh, nms_thresh=nms_thresh, nms_top_k=nms_top_k)
 
     @torch.no_grad()
-    def __call__(self, image, rgb=True):
+    def __call__(self, image: np.ndarray, rgb: bool = True) -> np.ndarray:
         im_height, im_width, _ = image.shape
         if rgb:
             image = image[..., ::-1]

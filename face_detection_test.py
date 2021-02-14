@@ -6,7 +6,7 @@ from argparse import ArgumentParser
 from ibug.face_detection import RetinaFacePredictor, S3FDPredictor
 
 
-def main():
+def main() -> None:
     # Parse command-line arguments
     parser = ArgumentParser()
     parser.add_argument('--input', '-i', help='Input video path or webcam index', default=0)
@@ -34,7 +34,7 @@ def main():
     has_window = False
     try:
         # Create the face detector
-        args.method = args.method.lower()
+        args.method = args.method.lower().strip()
         if args.method == 'retinaface':
             face_detector = RetinaFacePredictor(threshold=args.threshold, device=args.device,
                                                 model=(RetinaFacePredictor.get_model(args.weights)

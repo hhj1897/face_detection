@@ -1,11 +1,15 @@
 import os
 import cv2
 import numpy as np
+from typing import Union, Optional
+
+
+__all__ = ['HeadPoseEstimator']
 
 
 class HeadPoseEstimator(object):
-    def __init__(self, mean_shape_path=os.path.join(os.path.dirname(__file__),
-                                                    'data', 'bfm_lms.npy')):
+    def __init__(self, mean_shape_path: str = os.path.join(os.path.dirname(__file__),
+                                                           'data', 'bfm_lms.npy')) -> None:
         # Load the 68-point mean shape derived from BFM
         mean_shape = np.load(mean_shape_path)
 
@@ -17,7 +21,8 @@ class HeadPoseEstimator(object):
         # Flip the y coordinates of the mean shape to match that of the image coordinate system
         self._mean_shape_5pts[:, 1] = -self._mean_shape_5pts[:, 1]
 
-    def __call__(self, landmarks, image_width=0, image_height=0, camera_matrix=None):
+    def __call__(self, landmarks: np.ndarray, image_width: int = 0, image_height: int = 0,
+                 camera_matrix: Optional[np.ndarray] = None) -> np.ndarray:
         # Form the camera matrix
         if camera_matrix is None:
             if image_width <= 0 or image_height <= 0:
