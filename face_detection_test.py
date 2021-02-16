@@ -9,8 +9,10 @@ from ibug.face_detection import RetinaFacePredictor, S3FDPredictor
 def main() -> None:
     # Parse command-line arguments
     parser = ArgumentParser()
-    parser.add_argument('--input', '-i', help='Input video path or webcam index', default=0)
+    parser.add_argument('--input', '-i', help='Input video path or webcam index (default=0)', default=0)
     parser.add_argument('--output', '-o', help='Output file path', default=None)
+    parser.add_argument('--fourcc', '-f', help='FourCC of the output video (default=mp4v)',
+                        type=str, default='mp4v')
     parser.add_argument('--benchmark', '-b', help='Enable benchmark mode for CUDNN',
                         action='store_true', default=False)
     parser.add_argument('--no-display', '-n', help='No display if processing a video file',
@@ -59,10 +61,11 @@ def main() -> None:
 
         # Open the output video (if a path is given)
         if args.output is not None:
-            out_vid = cv2.VideoWriter(args.output, apiPreference=cv2.CAP_FFMPEG, fps=vid.get(cv2.CAP_PROP_FPS),
+            out_vid = cv2.VideoWriter(args.output, fps=vid.get(cv2.CAP_PROP_FPS),
                                       frameSize=(int(vid.get(cv2.CAP_PROP_FRAME_WIDTH)),
                                                  int(vid.get(cv2.CAP_PROP_FRAME_HEIGHT))),
-                                      fourcc=cv2.VideoWriter_fourcc('m', 'p', '4', 'v'))
+                                      fourcc=cv2.VideoWriter_fourcc(*args.fourcc))
+            assert out_vid.isOpened()
 
         # Process the frames
         frame_number = 0
