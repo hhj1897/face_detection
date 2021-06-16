@@ -4,6 +4,7 @@ import time
 import torch
 from argparse import ArgumentParser
 from ibug.face_detection import RetinaFacePredictor, S3FDPredictor
+from ibug.face_detection.utils import SimpleFaceTracker, HeadPoseEstimator
 
 
 def main() -> None:
@@ -26,6 +27,12 @@ def main() -> None:
                         default=None)
     parser.add_argument('--device', '-d', help='Device to be used by the model (default=cuda:0)',
                         default='cuda:0')
+    parser.add_argument('--iou-threshold', '-iou',
+                        help='IOU threshold used by the simple face tracker (default=0.4)',
+                        type=float, default=0.4)
+    parser.add_argument('--minimum-face-size', '-min',
+                        help='Minimum face size used by the simple face tracker (default=0.0)',
+                        type=float, default=0.0)
     args = parser.parse_args()
 
     # Set benchmark mode flag for CUDNN
@@ -50,6 +57,15 @@ def main() -> None:
         else:
             raise ValueError('method must be set to either RetinaFace or S3FD')
 
+        # Create the simple face tracker
+        face_tracker = SimpleFaceTracker(iou_threshold=args.iou_threshold,
+                                         minimum_face_size=args.minimum_face_size)
+        print('Simple face tracker created.')
+
+        # Create the head pose estimator
+        head_pose_estimator = HeadPoseEstimator()
+        print('Head pose estimator created.')
+
         # Open the input video
         using_webcam = not os.path.exists(args.input)
         vid = cv2.VideoCapture(int(args.input) if using_webcam else args.input)
@@ -70,16 +86,24 @@ def main() -> None:
         # Process the frames
         frame_number = 0
         window_title = os.path.splitext(os.path.basename(__file__))[0]
-        print('Processing started, press \'Q\' to quit.')
+        colours = [(0, 0, 255), (0, 255, 0), (255, 0, 0), (0, 255, 255), (255, 0, 255), (255, 255, 0),
+                   (0, 128, 255), (128, 255, 0), (255, 0, 128), (128, 0, 255), (0, 255, 128), (255, 128, 0)]
+        print('Processing started, press \'Q\' to quit or \'R\' to reset the tracker.')
         while True:
             # Get a new frame
             _, frame = vid.read()
             if frame is None:
                 break
             else:
-                # Detect faces
+                # Detect and track faces, also estimate head pose if landmarks are available
                 start_time = time.time()
                 faces = face_detector(frame, rgb=False)
+                tids = face_tracker(faces)
+                if faces.shape[1] >= 15:
+                    head_poses = [head_pose_estimator(face[5:15].reshape((-1, 2)), *frame.shape[1::-1])
+                                  for face in faces]
+                else:
+                    head_poses = [None] * len(faces.shape[0])
                 elapsed_time = time.time() - start_time
 
                 # Textural output
@@ -87,12 +111,27 @@ def main() -> None:
                       f'{len(faces)} faces detected.')
 
                 # Rendering
-                for face in faces:
+                for face, tid, head_pose in zip(faces, tids, head_poses):
                     bbox = face[:4].astype(int)
-                    cv2.rectangle(frame, (bbox[0], bbox[1]), (bbox[2], bbox[3]), color=(0, 0, 255), thickness=2)
+                    if tid is None:
+                        colour = (128, 128, 128)
+                    else:
+                        colour = colours[(tid - 1) % len(colours)]
+                    cv2.rectangle(frame, (bbox[0], bbox[1]), (bbox[2], bbox[3]), color=colour, thickness=2)
                     if len(face) > 5:
                         for pts in face[5:].reshape((-1, 2)):
-                            cv2.circle(frame, tuple(pts.astype(int).tolist()), 3, (0, 0, 255), -1)
+                            cv2.circle(frame, tuple(pts.astype(int).tolist()), 3, colour, -1)
+                    if tid is not None:
+                        cv2.putText(frame, f'Face {tid}', (bbox[0], bbox[1] - 10),
+                                    cv2.FONT_HERSHEY_DUPLEX, 0.6, colour, lineType=cv2.LINE_AA)
+                    if head_pose is not None:
+                        pitch, yaw, roll = head_pose
+                        cv2.putText(frame, f'Pitch: {pitch:.1f}', (bbox[2] + 5, bbox[1] + 10),
+                                    cv2.FONT_HERSHEY_DUPLEX, 0.5, colour, lineType=cv2.LINE_AA)
+                        cv2.putText(frame, f'Yaw: {yaw:.1f}', (bbox[2] + 5, bbox[1] + 30),
+                                    cv2.FONT_HERSHEY_DUPLEX, 0.5, colour, lineType=cv2.LINE_AA)
+                        cv2.putText(frame, f'Roll: {roll:.1f}', (bbox[2] + 5, bbox[1] + 50),
+                                    cv2.FONT_HERSHEY_DUPLEX, 0.5, colour, lineType=cv2.LINE_AA)
 
                 # Write the frame to output video (if recording)
                 if out_vid is not None:
@@ -106,6 +145,9 @@ def main() -> None:
                     if key == ord('q') or key == ord('Q'):
                         print('\'Q\' pressed, we are done here.')
                         break
+                    elif key == ord('r') or key == ord('R'):
+                        print('\'R\' pressed, reset the tracker.')
+                        face_tracker.reset()
                 frame_number += 1
     finally:
         if has_window:

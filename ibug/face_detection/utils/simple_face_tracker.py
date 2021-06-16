@@ -31,6 +31,7 @@ class SimpleFaceTracker(object):
 
     def __call__(self, face_boxes: np.ndarray) -> List[Optional[int]]:
         if face_boxes.size <= 0:
+            self._tracklets = []
             return []
 
         # Calculate area of the faces
