@@ -2,7 +2,7 @@ import os
 import cv2
 import math
 import numpy as np
-from typing import Union, Optional
+from typing import Optional, Tuple
 
 
 __all__ = ['HeadPoseEstimator']
@@ -24,7 +24,7 @@ class HeadPoseEstimator(object):
 
     def __call__(self, landmarks: np.ndarray, image_width: int = 0, image_height: int = 0,
                  camera_matrix: Optional[np.ndarray] = None,
-                 dist_coeffs: Optional[np.ndarray] = None) -> np.ndarray:
+                 dist_coeffs: Optional[np.ndarray] = None) -> Tuple[float, float, float]:
         # Form the camera matrix
         if camera_matrix is None:
             if image_width <= 0 or image_height <= 0:
@@ -47,7 +47,7 @@ class HeadPoseEstimator(object):
         _, rvec, _ = cv2.solvePnP(self._mean_shape_5pts, np.expand_dims(landmarks, axis=1),
                                   camera_matrix, dist_coeffs, flags=cv2.SOLVEPNP_EPNP)
         rot_mat, _ = cv2.Rodrigues(rvec)
-        pitch = math.atan2(rot_mat[2, 1], rot_mat[2, 2])
-        yaw = -math.asin(rot_mat[2, 0])
-        roll = math.atan2(rot_mat[1, 0], rot_mat[0, 0])
-        return np.array([-pitch, yaw, roll]) / math.pi * 180.0
+        pitch = math.atan2(rot_mat[2, 1], rot_mat[2, 2]) / math.pi * 180.0
+        yaw = -math.asin(rot_mat[2, 0]) / math.pi * 180.0
+        roll = math.atan2(rot_mat[1, 0], rot_mat[0, 0]) / math.pi * 180.0
+        return -pitch, yaw, roll
