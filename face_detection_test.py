@@ -33,6 +33,9 @@ def main() -> None:
     parser.add_argument('--minimum-face-size', '-min',
                         help='Minimum face size used by the simple face tracker (default=0.0)',
                         type=float, default=0.0)
+    parser.add_argument('--head-pose-preference', '-hp',
+                        help='Head pose output preference (default=0)',
+                        type=int, default=0)
     args = parser.parse_args()
 
     # Set benchmark mode flag for CUDNN
@@ -100,7 +103,8 @@ def main() -> None:
                 faces = face_detector(frame, rgb=False)
                 tids = face_tracker(faces)
                 if faces.shape[1] >= 15:
-                    head_poses = [head_pose_estimator(face[5:15].reshape((-1, 2)), *frame.shape[1::-1])
+                    head_poses = [head_pose_estimator(face[5:15].reshape((-1, 2)), *frame.shape[1::-1],
+                                                      output_preference=args.head_pose_preference)
                                   for face in faces]
                 else:
                     head_poses = [None] * len(faces.shape[0])

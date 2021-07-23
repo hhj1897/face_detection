@@ -23,8 +23,8 @@ class HeadPoseEstimator(object):
         self._mean_shape_5pts[:, 1] = -self._mean_shape_5pts[:, 1]
 
     def __call__(self, landmarks: np.ndarray, image_width: int = 0, image_height: int = 0,
-                 camera_matrix: Optional[np.ndarray] = None,
-                 dist_coeffs: Optional[np.ndarray] = None) -> Tuple[float, float, float]:
+                 camera_matrix: Optional[np.ndarray] = None, dist_coeffs: Optional[np.ndarray] = None,
+                 output_preference: int = 0) -> Tuple[float, float, float]:
         # Form the camera matrix
         if camera_matrix is None:
             if image_width <= 0 or image_height <= 0:
@@ -47,7 +47,30 @@ class HeadPoseEstimator(object):
         _, rvec, _ = cv2.solvePnP(self._mean_shape_5pts, np.expand_dims(landmarks, axis=1),
                                   camera_matrix, dist_coeffs, flags=cv2.SOLVEPNP_EPNP)
         rot_mat, _ = cv2.Rodrigues(rvec)
-        pitch = math.atan2(rot_mat[2, 1], rot_mat[2, 2]) / math.pi * 180.0
         yaw = -math.asin(rot_mat[2, 0]) / math.pi * 180.0
-        roll = math.atan2(rot_mat[1, 0], rot_mat[0, 0]) / math.pi * 180.0
+        if -1e-6 < yaw - 90.0 < 1e-6:
+            pitch = 0.0
+            roll = -math.atan2(rot_mat[0, 1], rot_mat[0, 2]) / math.pi * 180.0
+        elif -1e-6 < yaw + 90.0 < 1e-6:
+            pitch = 0.0
+            roll = math.atan2(-rot_mat[0, 1], -rot_mat[0, 2]) / math.pi * 180.0
+        else:
+            pitch = math.atan2(rot_mat[2, 1], rot_mat[2, 2]) / math.pi * 180.0
+            roll = math.atan2(rot_mat[1, 0], rot_mat[0, 0]) / math.pi * 180.0
+
+        # Respond to output_preference:
+        # output_preference == 1: limit pitch to the range of -90.0 ~ 90.0
+        # output_preference == 2: limit yaw to the range of -90.0 ~ 90.0 (already satisfied)
+        # output_preference == 3: limit roll to the range of -90.0 ~ 90.0
+        # otherwise: minimise total rotation, min(abs(pitch) + abs(yaw) + abs(roll))
+        if output_preference != 2:
+            alt_pitch = pitch - 180.0 if pitch > 0.0 else pitch + 180.0
+            alt_yaw = -180.0 - yaw if yaw < 0.0 else 180.0 - yaw
+            alt_roll = roll - 180.0 if roll > 0.0 else roll + 180.0
+            if (output_preference == 1 and -90.0 < alt_pitch < 90.0 or
+                    output_preference == 3 and -90.0 < alt_roll < 90.0 or
+                    output_preference not in (1, 2, 3) and
+                    abs(alt_pitch) + abs(alt_yaw) + abs(alt_roll) < abs(pitch) + abs(yaw) + abs(roll)):
+                pitch, yaw, roll = alt_pitch, alt_yaw, alt_roll
+
         return -pitch, yaw, roll
