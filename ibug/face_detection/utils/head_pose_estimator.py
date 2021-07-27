@@ -47,15 +47,17 @@ class HeadPoseEstimator(object):
         _, rvec, _ = cv2.solvePnP(self._mean_shape_5pts, np.expand_dims(landmarks, axis=1),
                                   camera_matrix, dist_coeffs, flags=cv2.SOLVEPNP_EPNP)
         rot_mat, _ = cv2.Rodrigues(rvec)
-        yaw = -math.asin(rot_mat[2, 0]) / math.pi * 180.0
-        if -1e-6 < yaw - 90.0 < 1e-6:
+        if 1.0 + rot_mat[2, 0] < 1e-9:
             pitch = 0.0
+            yaw = 90.0
             roll = -math.atan2(rot_mat[0, 1], rot_mat[0, 2]) / math.pi * 180.0
-        elif -1e-6 < yaw + 90.0 < 1e-6:
+        elif 1.0 - rot_mat[2, 0] < 1e-9:
             pitch = 0.0
+            yaw = -90.0
             roll = math.atan2(-rot_mat[0, 1], -rot_mat[0, 2]) / math.pi * 180.0
         else:
             pitch = math.atan2(rot_mat[2, 1], rot_mat[2, 2]) / math.pi * 180.0
+            yaw = -math.asin(rot_mat[2, 0]) / math.pi * 180.0
             roll = math.atan2(rot_mat[1, 0], rot_mat[0, 0]) / math.pi * 180.0
 
         # Respond to output_preference:
