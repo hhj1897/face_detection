@@ -25,6 +25,7 @@ def main() -> None:
     parser.add_argument('--weights', '-w',
                         help='Weights to load, can be either resnet50 or mobilenet0.25 when using RetinaFace',
                         default=None)
+    parser.add_argument('--alternative-pth', '-p', help='Alternative pth file to load', default=None)
     parser.add_argument('--device', '-d', help='Device to be used by the model (default=cuda:0)',
                         default='cuda:0')
     parser.add_argument('--iou-threshold', '-iou',
@@ -48,17 +49,19 @@ def main() -> None:
         # Create the face detector
         args.method = args.method.lower().strip()
         if args.method == 'retinaface':
-            face_detector = RetinaFacePredictor(threshold=args.threshold, device=args.device,
-                                                model=(RetinaFacePredictor.get_model(args.weights)
-                                                       if args.weights else None))
-            print('Face detector created using RetinaFace.')
+            face_detector_class = (RetinaFacePredictor, 'RetinaFace')
         elif args.method == 's3fd':
-            face_detector = S3FDPredictor(threshold=args.threshold, device=args.device,
-                                          model=(S3FDPredictor.get_model(args.weights)
-                                                 if args.weights else None))
-            print('Face detector created using S3FD.')
+            face_detector_class = (S3FDPredictor, 'S3FD')
         else:
             raise ValueError('method must be set to either RetinaFace or S3FD')
+        if args.weights is None:
+            fd_model = face_detector_class[0].get_model()
+        else:
+            fd_model = face_detector_class[0].get_model(args.weights)
+        if args.alternative_pth is not None:
+            fd_model.weights = args.alternative_pth
+        face_detector = face_detector_class[0](threshold=args.threshold, device=args.device, model=fd_model)
+        print(f"Face detector created using {face_detector_class[1]}.")
 
         # Create the simple face tracker
         face_tracker = SimpleFaceTracker(iou_threshold=args.iou_threshold,
@@ -107,7 +110,7 @@ def main() -> None:
                                                       output_preference=args.head_pose_preference)
                                   for face in faces]
                 else:
-                    head_poses = [None] * len(faces.shape[0])
+                    head_poses = [None] * faces.shape[0]
                 elapsed_time = time.time() - start_time
 
                 # Textural output
