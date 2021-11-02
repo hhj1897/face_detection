@@ -61,7 +61,7 @@ def main() -> None:
         if args.alternative_pth is not None:
             fd_model.weights = args.alternative_pth
         face_detector = face_detector_class[0](threshold=args.threshold, device=args.device, model=fd_model)
-        print(f"Face detector created using {face_detector_class[1]}.")
+        print(f"Face detector created using {face_detector_class[1]} ({fd_model.weights}).")
 
         # Create the simple face tracker
         face_tracker = SimpleFaceTracker(iou_threshold=args.iou_threshold,
