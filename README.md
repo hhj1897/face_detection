@@ -36,7 +36,7 @@ from ibug.face_detection.utils import HeadPoseEstimator, SimpleFaceTracker
 # Create a RetinaFace detector using Resnet50 backbone, with the confidence 
 # threshold set to 0.8
 face_detector = RetinaFacePredictor(
-    thershold=0.8, device='cuda:0',
+    threshold=0.8, device='cuda:0',
     model=RetinaFacePredictor.get_model('resnet50'))
 
 # Create a head pose estimator
