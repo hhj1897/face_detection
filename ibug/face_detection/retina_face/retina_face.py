@@ -54,10 +54,8 @@ class RetinaFace(nn.Module):
         backbone = None
         if cfg['name'] == 'mobilenet0.25':
             backbone = MobileNetV1()
-            if cfg['pretrain']:
-                raise ValueError('cfg[\'pretrain\'] cannot be set to True for mobilenet0.25')
         elif cfg['name'] == 'Resnet50':
-            backbone = models.resnet50(pretrained=cfg['pretrain'])
+            backbone = models.resnet50()
 
         self.body = _utils.IntermediateLayerGetter(backbone, cfg['return_layers'])
         in_channels_stage2 = cfg['in_channel']
