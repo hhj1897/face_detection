@@ -1,4 +1,5 @@
 import os
+import subprocess
 import sys
 import shutil
 from setuptools import find_namespace_packages, setup
@@ -13,6 +14,18 @@ def clean_repo():
     if os.path.isdir(build_folder):
         shutil.rmtree(build_folder, ignore_errors=True)
 
+def pull_first():
+    """This script is in a git directory that can be pulled."""
+    cwd = os.getcwd()
+    gitdir = os.path.dirname(os.path.realpath(__file__))
+    os.chdir(gitdir)
+    try:
+        subprocess.call(['git', 'lfs', 'pull'])
+    except subprocess.CalledProcessError:
+        raise RuntimeError("Make sure git-lfs is installed!")
+    os.chdir(cwd)
+
+pull_first()
 
 # Read version string
 _version = None
