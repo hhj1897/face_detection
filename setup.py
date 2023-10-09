@@ -1,7 +1,7 @@
 import os
 import sys
 import shutil
-from setuptools import setup
+from setuptools import find_namespace_packages, setup
 
 
 def clean_repo():
@@ -33,7 +33,12 @@ config = {
     'description': 'A collection of pretrained face detectors including S3FD and RetinaFace.',
     'author': 'Jie Shen',
     'author_email': 'js1907@imperial.ac.uk',
-    'packages': ['ibug.face_detection'],
+    'packages': find_namespace_packages(),
+    'package_data': {
+        'ibug.face_detection.s3fd.weights': ['*.pth'],
+        'ibug.face_detection.retina_face.weights': ['*.pth'],
+        'ibug.face_detection.utils.data': ['*.npy'],
+    },
     'install_requires': ['numpy>=1.16.0', 'scipy>=1.1.0', 'torch>=1.1.0',
                          'torchvision>=0.3.0', 'opencv-python>= 3.4.2'],
     'zip_safe': False
